@@ -1,0 +1,139 @@
+<!-- 
+  커뮤니티 메인 페이지 템플릿입니다.
+  커뮤니티 메인 페이지에서 각 게시판으로 이동할 수 있습니다.
+  또한 각 게시판의 최신 글 몇개를 확인할 수 있습니다.
+-->
+<!DOCTYPE html>
+<html lang="kor" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>수면의 숲 커뮤니티입니다.</title>
+
+  <!-- css style -->
+  <style>
+    tr:hover {
+      cursor: pointer;
+    }
+
+    .title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      /* Adjust according to your preference */
+    }
+  </style>
+  <!-- jQuery -->
+  <script src="comm_assets/js/jquery-3.6.1.min.js"></script>
+</head>
+
+<body>
+  <!-- header thymeleaf 삽입-->
+  <header th:replace="~{views/community/header :: header}"></header>
+  <!-- banner 삽입 -->
+  <div th:replace="~{views/community/banner :: banner}"></div>
+
+  <!-- ====== 본문 Start ====== -->
+  <section class="container ud-features">
+    <div class="row g-2">
+      <div class="col-5 mb-3">
+        <a href="board.comm?board=best">
+          <h1 class="ud-widget-title mb-2">베스트</h1>
+        </a>
+        <table class="table table-hover">
+          <thead>
+            <tr style="cursor: default;">
+              <th scope="col">제목</th>
+              <th scope="col" style="text-align: center; padding-right: 10px; white-space: nowrap;">추천</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="b, iterStat : ${bestList}" th:if="${iterStat.index} &lt; 10" th:data-boardNo="${b.boardNo}"
+              th:onclick="|location.href='post.comm?no=' + $(this).attr('data-boardNo')|">
+              <td class="title" th:text="${b.boardTitle}"></td>
+              <!-- <td>
+                <span th:text="${#strings.length(b.boardTitle) &gt; 39 ? #strings.substring(b.boardTitle, 0, 39) + '...' : b.boardTitle}"></span>
+              </td> -->
+              <td th:text="${b.boardLikes}" style="text-align: center; padding-right: 10px;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-2"></div>
+      <div class="col-5 d-flex justify-content-center">
+        <!--<i class="ms-2 lni lni-add-files"></i> 이거 파일 첨부되었다는 표시임.-->
+        <!-- <img src="comm_assets/images/!final_proj/banner.png" alt="Logo" /> -->
+        <h3>광고를 위한 공간</h3>
+      </div>
+    </div>
+
+    <div class="row g-2 mt-2">
+      <div class="col-5">
+        <a href="board.comm?board=tips_and_info">
+          <h1 class="ud-widget-title mb-2">꿀팁, 정보</h1>
+        </a>
+        <table class="table table-hover">
+          <thead>
+            <tr style="cursor: default;">
+              <th scope="col">제목</th>
+              <th scope="col" style="text-align: center; padding-right: 10px; white-space: nowrap;">추천</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="i, iterStat : ${infoList}" th:if="${iterStat.index} &lt; 10" th:data-boardNo="${i.boardNo}"
+              th:onclick="|location.href='post.comm?no=' + $(this).attr('data-boardNo')|">
+              <td class="title" th:text="${i.boardTitle}"></td>
+              <!-- <td>
+                <span th:text="${#strings.length(i.boardTitle) &gt; 39 ? #strings.substring(i.boardTitle, 0, 39) + '...' : i.boardTitle}"></span>
+              </td> -->
+              <td th:text="${i.boardLikes}" style="text-align: center; padding-right: 10px;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-2"></div>
+      <div class="col-5">
+        <a href="board.comm?board=free_and_humor">
+          <h1 class="ud-widget-title mb-2">자유, 유머</h1>
+        </a>
+        <table class="table table-hover">
+          <thead>
+            <tr style="cursor: default;">
+              <th scope="col">제목</th>
+              <th scope="col" style="text-align: center; padding-right: 10px; white-space: nowrap;">추천</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="f, iterStat : ${freeList}" th:if="${iterStat.index} &lt; 10" th:data-boardNo="${f.boardNo}"
+              th:onclick="|location.href='post.comm?no=' + $(this).attr('data-boardNo')|">
+              <td class="title" th:text="${f.boardTitle}"></td>
+              <!-- <td>
+                <span th:text="${#strings.length(f.boardTitle) &gt; 39? #strings.substring(f.boardTitle, 0, 39) + '...' : f.boardTitle}"></span>
+              </td> -->
+              <td th:text="${f.boardLikes}" style="text-align: center; padding-right: 10px;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- <div class="row g-2 mt-5">
+      <h1>기타 게시판</h1>
+      <hr>
+      <a th:href="@{'/board.comm?board=admin_announcement'}">
+        <h3>공지사항</h3>
+      </a>
+      <hr>
+      <a th:href="@{'/board.comm?board=user_question'}">
+        <h3>건의사항</h3>
+      </a>
+      <hr>
+    </div> -->
+  </section>
+  <!-- ====== 본문 End ====== -->
+
+  <!-- footer 삽입 -->
+  <div th:replace="~{views/community/footer :: footer}"></div>
+</body>

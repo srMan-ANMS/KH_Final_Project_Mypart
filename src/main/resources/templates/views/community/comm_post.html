@@ -1,0 +1,540 @@
+<!-- 
+  게시글 상세보기 템플릿입니다.
+  게시판에서 게시글을 클릭하면 이 템플릿을 사용합니다.
+-->
+
+<!DOCTYPE html>
+<html lang="kor">
+
+<head>
+  <title>[[${cpaw.boardTitle}]]</title>
+  <!-- jQuery -->
+  <script src="comm_assets/js/jquery-3.6.1.min.js"></script>
+</head>
+
+<body>
+  <div id="top"></div> <!-- 페이지 스크롤 앵커 - top-->
+  <!-- header thymeleaf 삽입-->
+  <header th:replace="~{views/community/header :: header}"></header>
+  <!-- banner 삽입 -->
+  <div th:replace="~{views/community/banner :: banner}"></div>
+  <!-- autoScroll 삽입-->
+  <div th:replace="~{views/community/autoScroll :: autoScroll}"></div>
+
+  <!-- Page content-->
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-2 side-areas" style="background-color: lightgray;">
+        <!-- 공백을 주기 위한 div입니다. -->
+      </div>
+      <div class="col-8 align-content-lg-center ">
+        <!-- 게시글 콘텐츠-->
+        <article style="padding: 10px;">
+          <!-- Post header-->
+          <header class="mb-4">
+            <div style="height: 200px;">
+              광고를 위한 빈칸
+            </div>
+            <!-- Post title-->
+            <h2 class="fw-bolder mb-1" id="content">[[${cpaw.boardTitle}]]</h2>
+            <!-- 밑줄 굵게 2px로-->
+
+            <div class="d-flex justify-content-start">
+              <div class="fs-5 mb-2 me-5" th:onclick="#" style="cursor: pointer;">
+                작성자 : [[${cpaw.memberNickname}]]
+              </div>
+            </div>
+            <div class="d-flex justify-content-between ml-2">
+              <!-- <div class="text-muted mb-2" th:text="'등록일 : ' + ${#dates.format(cpaw.boardEnrollDate, 'yyyy-MM-dd a hh:mm:ss')}"></div> -->
+              <div class="text-muted mb-2" style="font-size: 0.7em;">
+                <div>등록 : <span th:text="${#dates.format(cpaw.boardEnrollDate, 'yyyy-MM-dd a hh:mm:ss')}"></span></div>
+                <div th:if="${cpaw.boardModifyDate != null}">수정 : <span
+                    th:text="${#dates.format(cpaw.boardModifyDate, 'yyyy-MM-dd a hh:mm:ss')}"></span></div>
+              </div>
+
+              <div class="d-flex justify-content-between">
+                <div class="text-muted mb-2">조회수 : [[${cpaw.boardViews}]]&nbsp;&nbsp;&nbsp;</div>
+                <div class="text-muted mb-2">글번호 : [[${cpaw.boardNo}]] </div>
+              </div>
+            </div>
+            <!-- Post categories-->
+
+            <!-- 회색 테두리로 감싸진 div-->
+            <div style="background-color: darkgray; height: 20px;"></div>
+          </header>
+          <!-- 본문 삽입-->
+          <p th:utext="${cpaw.boardContent}"></p>
+        </article>
+
+        <!-- 추천, 반대, 신고 버튼-->
+        <!-- 작성자가 아닌 사용자가 조회시-->
+        <div class="d-flex justify-content-center" id="like-dislike-btns"
+          th:if="${(session.loginUser != null) && (cpaw.memberNo.toString() != session.loginUser?.memberNo)}">
+          <button type="button" class="btn btn-outline-primary me-2" id="like-btn" style="cursor: pointer; height: fit-content;
+                    background-color: #5c8984;border: none; color: white;">추천 [[${cpaw.boardLikes}]] <i
+              class="bi bi-hand-thumbs-up-fill"></i></button>
+          <button type="button" class="btn btn-outline-primary me-2" id="dislike-btn" style="cursor: pointer;
+                    background-color: #5c8984;border: none; color: white;">반대 [[${cpaw.boardDislikes}]]<i
+              class="bi bi-hand-thumbs-down-fill"></i></button>
+        </div>
+        <!-- 로그인 안 했을 때-->
+        <div class="d-flex justify-content-center mt-5" style="padding: 10px;" th:if="${session.loginUser == null}">
+          <p style="font-size: 15px;">추천, 반대, 신고하려면, 로그인을 먼저 해주세요. </p><br>
+          <p style="font-size: 15px;">로그인 하시려면, <a href="loginView.me">여기</a>을 눌러주세요</p>
+        </div>
+        <div class="d-flex justify-content-between"
+          th:if="${(session.loginUser != null) && (cpaw.memberNo.toString() != session.loginUser?.memberNo)}"
+          style="padding: 10px;">
+          <button type="button" class="btn btn-outline-primary me-2" id="report-btn" style="cursor: pointer;
+                    background-color: #5c8984;border: none; color: white;">신고 [[${cpaw.boardReports}]] &nbsp;<i
+              class="bi bi-megaphone-fill"></i></button>
+        </div>
+        <!-- 자신의 글일 때-->
+        <div class="d-flex justify-content-center mt-5" style="padding: 10px;"
+          th:if="${(session.loginUser != null) && (cpaw.memberNo.toString() == session.loginUser?.memberNo)}">
+          <button type="button" class="btn btn-outline-primary me-2" id="report-btn" style="cursor: pointer;
+                    background-color: #5c8984;border: none; color: white;"
+            th:onclick="editPost([[${cpaw.boardNo}]])">수정</button>
+          <button type="button" class="btn btn-outline-primary me-2" id="report-btn" style="cursor: pointer;
+                    background-color: #5c8984;border: none; color: white;"
+            th:onclick="deletePost([[${cpaw.boardNo}]])">삭제</button>
+        </div>
+
+        <div style="height: 30px;"></div>
+        <!-- 추천, 반대, 신고 버튼 끝-->
+
+        <!--replyList : 댓글창 + 페이지네이션으로 대체되는 div-->
+        <div id="comments"></div>
+
+        <div id="commentFormAnchor" style="height: 50px;"></div>
+        <!-- 댓글 등록 창-->
+        <form id="commentForm" th:if="${session.loginUser}">
+          <div class="mb-3">
+            <label for="comment" class="form-label">댓글</label>
+            <textarea class="form-control comment" id="comment" rows="3" maxlength="1000" placeholder="댓글은 1000자 제한입니다."
+              required oninput="countChars()"></textarea>
+            <div id="charNum">0/1000</div>
+          </div>
+          <button type="submit" class="btn btn-primary float-end" style="cursor: pointer;
+                    background-color: #5c8984;border: none; color: white; margin: 1px;">등록하기</button>
+        </form>
+        <!-- 만일 로그인 하지 않으면 : -->
+        <div th:unless="${session.loginUser}">
+          <p style="font-size: 20px; font-weight: bold;">댓글을 작성하시려면 <a href="loginView.me">로그인</a>을 해주세요.</p>
+        </div>
+        <!-- 댓글 등록 창 끝-->
+
+        <div style="height: 100px;"></div>
+      </div>
+      <div class="col-2" style="background-color: lightgray;">
+        <!-- 공백을 주기 위한 div입니다. -->
+      </div>
+    </div>
+  </div>
+
+  <div th:replace="~{views/community/banner :: banner}"></div>
+  <div id="bottom"></div> <!-- 바닥 앵커 -->
+  <!-- footer 삽입 -->
+  <div th:replace="~{views/community/footer :: footer}"></div>
+
+  <!-- 스크립트 모음 -->
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    var boardNo = /*[[${cpaw.boardNo}]]*/ 1;
+    var userNo = /*[[${session.loginUser?.memberNo}]]*/ 1;
+    var boardWriterNo = /*[[${cpaw.memberNo}]]*/ 1;
+
+    console.log("boardNo : " + boardNo);
+    console.log("userNo : " + userNo);
+    console.log("boardWriterNo : " + boardWriterNo);
+
+    /*게시글 추천, 반대. 상위 div에 위임한 형식입니다.
+    클릭 시 상위 div만 재로드합니다. jquery의 load로 불러오면 html만 가져오므로 이벤트 핸들러가 작동하지 않는 문제를 해결 가능합니다.*/
+    $("#like-dislike-btns").on('click', '#like-btn', function () {
+      console.log("like-btn clicked");
+      $.ajax({
+        url: "likePost",
+        type: "POST",
+        data: { boardNo: boardNo, userNo: userNo },
+        success: function (response) {
+          $("#like-dislike-btns").load(location.href + " #like-dislike-btns");
+        },
+        error: function (xhr, status, error) {
+          showFailure(status, error, () => { });
+        },
+      });
+    });
+
+    $("#like-dislike-btns").on('click', '#dislike-btn', function () {
+      console.log("dislike-btn clicked");
+      $.ajax({
+        url: "dislikePost",
+        type: "POST",
+        data: { boardNo: boardNo, userNo: userNo },
+        success: function (response) {
+          $("#like-dislike-btns").load(location.href + " #like-dislike-btns");
+        },
+        error: function (xhr, status, error) {
+          showFailure(status, error, () => { });
+        },
+      });
+    });
+
+    /**
+     * 게시글 신고
+     */
+    $('#report-btn').click(function () {
+      showConfirm("게시글을 신고/신고취소 하시겠습니까?", "처음이라면 신고하고, 이전에 신고를 했다면 취소합니다.", "warning", () => {
+        reportPost();
+      });
+    });
+
+
+    function reportPost() {
+      $.ajax({
+        url: 'reportPost',
+        type: 'POST',
+        data: { boardNo: boardNo, userNo: userNo },
+        success: function (response) {
+          showSuccess("처리되었습니다.", response, () => {
+            window.location.reload();
+          });
+        },
+        error: function (xhr, status, error) {
+          showFailure(status, error, () => {
+            window.location.reload();
+          });
+        },
+      });
+    }
+
+
+    //게시글 수정
+    function editPost(boardNo) {
+      if (boardWriterNo != userNo) {
+        showFailure("게시글 수정 권한이 없습니다.", "게시글 작성자만 수정할 수 있습니다.", () => {
+        });
+        return;
+      } else {
+        location.href = "commPostEdit?boardNo=" + boardNo;
+      }
+    }
+
+    //게시글 삭제
+    function deletePost(boardNo) {
+      Swal.fire({
+        title: '정말로 삭제합니까?',
+        text: "되돌릴 수 없습니다!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '네!',
+        cancelButtonText: '아니요'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajax({
+            type: "POST",
+            url: "commPostDelete",
+            data: { boardNo: boardNo },
+            success: function (result) {
+              if (result.result === "success") {
+                Swal.fire({
+                  title: '삭제 완료!!',
+                  text: '당신의 파일이 삭제되었습니다.',
+                  icon: 'success'
+                }).then(() => {
+                  window.history.back();
+                });
+              } else {
+                showFailure("게시글 삭제 실패", result, () => {
+                });
+              }
+            },
+            error: function (xhr, status, error) {
+              showFailure(status, error, () => {
+              });
+            },
+          });
+        }
+      });
+    }
+
+    //댓글 목록 구현하기
+    $(document).ready(function () {
+      loadComments(1);    //페이지 로드 시 첫 번째 페이지의 댓글을 로드합니다. 이게 없으면 로드가 안됩니다.
+    });
+    function loadComments(page) {
+      $.ajax({
+        url: "replyList",
+        type: "get",
+        dataType: "html",
+        data: {
+          "boardNo": boardNo,
+          "page": page
+        },
+        success: function (html) {
+          $("#comments").html(html);
+        }
+      })
+    }
+
+    /**
+     * 댓글 페이지네이션 인터셉터를 위한 이벤트
+     */
+    $(document).on('click', '.comment-page-link', function (e) {
+      e.preventDefault(); // prevent the default action (navigation)
+      var page = $(this).attr('data-page'); // get the page number from the data attribute
+      loadComments(page); // load the new page of comments
+    });
+
+    /**
+     * 댓글 입력창 글자수 제한
+     */
+    function countChars() {
+      var comment = $("#comment").val();
+      var commentLength = comment.length;
+      $("#charNum").text(commentLength + "/1000");
+      if (commentLength > 1000) {
+        alert("댓글은 1000자까지 입력 가능합니다.");
+        $("#comment").val(comment.substring(0, 1000));
+        $("#charNum").text("1000/1000");
+      }
+    }
+
+    /**
+     * 댓글 수정창 글자수 제한
+     */
+    function countChars2(replyNo) {
+      var replyContent = document.getElementById('comment-modify-' + replyNo).value;
+      var charNum = replyContent.length;
+      document.getElementById('charNum2').innerText = charNum + "/1000";
+    }
+    /**
+     * 댓글 등록
+     */
+    var commentForm = $("#commentForm");
+    commentForm.submit(addComment);
+    function addComment(event) {
+      event.preventDefault();    //기본 동작을 막습니다.
+      var content = $("#comment").val();  //댓글 내용을 가져옵니다.
+      var data = {
+        memberNo: userNo,
+        boardNo: boardNo,
+        replyContent: content,
+      };
+      //만약을 위해, 댓글 글자수 1000자 제한, 공백 댓글 제한 if문
+      if (content.length > 1000) {
+        alert("댓글은 1000자 이내로 작성해주세요.");    //이 alert를 예쁘게 바꿔도 됩니다.
+        return;
+      } else if (content.trim().length == 0) {
+        alert("댓글을 작성해주세요. 빈칸으로만 댓글 다는 것은 안됩니다.");
+      } else {
+        $.ajax({
+          type: "post",
+          url: "addReply",
+          data: JSON.stringify(data),
+          contentType: "application/json; charset=utf-8",
+          dataType: "json"
+        }).done(function (response) {
+          if (response.statusCode == 1) {
+            // alert("댓글이 등록되었습니다.");
+            // window.location.reload();
+            loadComments(1);
+          } else {
+            showFailure("댓글 등록 실패", response, () => {
+            });
+          }
+        }).fail(function (error) {
+          showFailure("댓글 등록 실패", error, () => {
+          });
+        });
+      }
+    }
+
+    /**
+     * 댓글 삭제
+     */
+    function deleteReply(replyNo) {
+      var data = {
+        memberNo: userNo,
+        boardNo: boardNo,
+        replyNo: replyNo  // 삭제할 댓글 번호
+      };
+      console.log(typeof data.memberNo); // "String"
+      console.log(typeof data.boardNo); // "number"
+      console.log(typeof data.replyNo); // "number"
+      $.ajax({
+        type: "POST",
+        url: "deleteReply",
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (response) {
+          if (response.statusCode == 1) {
+            showSuccess("댓글이 삭제되었습니다.", "", response, () => {
+            });
+            loadComments(1);
+          } else {
+            showFailure("댓글 삭제 실패", "", response, () => {
+            });
+            loadComments(1);
+          }
+        },
+        error: function (xhr, status, error) {
+          alert("댓글 삭제에 실패하였습니다.");
+        }
+      });
+    }
+
+    /**
+     * 로그인 안한얘가 댓글 쓰려고 할 때
+     * 한번 더 막아주는 로직
+     */
+    $(document).ready(function () {
+      // 로그인 여부를 확인합니다.
+      var memberNo = /*[[${session.loginUser?.memberNo}]]*/ null;
+      if (memberNo == null) {
+        // 댓글 입력창을 비활성화합니다.
+        $(".comment").prop("disabled", true);
+      }
+    });
+
+    /**
+     * 수정 창 토글
+     */
+    function toggleEditForm(button, replyNo) {
+      var form = document.querySelector("#comment-modify-td-" + replyNo);
+      console.log(form);
+      if (form.style.display === "none") {
+        form.style.display = "table-cell";
+      } else {
+        form.style.display = "none";
+      }
+    }
+
+    /**
+     * 댓글 수정
+     */
+    function editReply(button, replyNo) {
+      const replyContent = document.querySelector("#comment-modify-" + replyNo).value;
+      var data = {
+        memberNo: userNo,
+        boardNo: boardNo,
+        replyNo: replyNo,  // 수정할 댓글 번호
+        replyContent: replyContent // 수정할 댓글 내용
+      };
+      $.ajax({
+        type: "POST",
+        url: "editReply",
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (response) {
+          if (response.statusCode == 1) {
+            showSuccess("댓글이 수정되었습니다.", "", response, () => {
+            });
+            loadComments(1);
+          } else {
+            showFailure("댓글 수정 실패", "", response, () => {
+            });
+          }
+        },
+        error: function (xhr, status, error) {
+          alert("댓글 수정에 실패하였습니다.");
+        }
+      });
+    }
+
+    //댓글 좋아요, 싫어요
+    function likeReply(replyNo) {
+      if (userNo != null) {
+        $.ajax({
+          type: "POST",
+          url: "likeReply",
+          data: {
+            memberNo: userNo,
+            replyNo: replyNo
+          },
+          success: function (response) {
+            console.log("🚀 ~ file: comm_post.html:440 ~ likeReply ~ response:", response)
+            // 서버에서 받은 response 값에 따라 추천 수를 증가 또는 감소시킵니다.
+            var likeCount = parseInt($("#reply-like-count-" + replyNo).text());
+            console.log("🚀 ~ file: comm_post.html:442 ~ likeReply ~ likeCount:", likeCount)
+            if (response == 1) {
+              likeCount += 1;
+            } else if (response == 0) {
+              likeCount -= 1;
+            }
+            console.log("계산 결과 : likeCount는" + likeCount);
+            $("#reply-like-count-" + replyNo).text(likeCount);
+          },
+          error: function (xhr, status, error) {
+            showFailure(status, error, () => { });
+          }
+        });
+      }
+    }
+
+    //댓글 싫어요
+    function dislikeReply(replyNo) {
+      if (userNo != null) {
+        $.ajax({
+          type: "POST",
+          url: "dislikeReply",
+          data: {
+            memberNo: userNo,
+            replyNo: replyNo
+          },
+          success: function (response) {
+            // 서버에서 받은 response 값에 따라 추천 수를 증가 또는 감소시킵니다.
+            var dislikeCount = parseInt($("#reply-dislike-count-" + replyNo).text());
+            if (response == 1) {
+              dislikeCount += 1;
+            } else if (response == 0) {
+              dislikeCount -= 1;
+            }
+            $("#reply-dislike-count-" + replyNo).text(dislikeCount);
+          },
+          error: function (xhr, status, error) {
+            showFailure(status, error, () => { });
+          }
+        });
+      }
+    }
+
+    /**
+     * 댓글 신고
+     */
+    function reportReply(replyNo) {
+      showConfirm("댓글을 신고/신고취소 하시겠습니까?", "처음이라면 신고하고, 이전에 신고를 했다면 취소합니다.", "warning", () => {
+        reportReply2(replyNo);
+      });
+
+    }
+    function reportReply2(replyNo) {
+      if (userNo != null) {
+        $.ajax({
+          type: "POST",
+          url: "reportReply",
+          data: {
+            memberNo: userNo,
+            replyNo: replyNo
+          },
+          success: function (response) {
+            showSuccess("처리했습니다", response, () => {
+              loadComments(1);
+            });
+          },
+          error: function (xhr, status, error) {
+            showFailure(status, error, () => {
+            });
+          }
+        });
+      }
+    }
+    /*]]>*/
+  </script>
+</body>
+
+</html>

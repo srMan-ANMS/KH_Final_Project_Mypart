@@ -1,0 +1,46 @@
+<!-- 
+  게시판을 보여주는 템플릿입니다.
+  다양한 fragment를 삽입해 구성했습니다.
+-->
+<!DOCTYPE html>
+<html lang="kor" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <!-- jQuery -->
+  <script src="comm_assets/js/jquery-3.6.1.min.js"></script>
+</head>
+
+<body>
+  <!-- header thymeleaf 삽입-->
+  <header th:replace="~{views/community/header :: header}"></header>
+  <!-- banner 삽입 -->
+  <div th:replace="~{views/community/banner :: banner}"></div>
+  <!-- 리스트 삽입-->
+  <div th:replace="~{views/community/list :: list}"></div>
+  <!-- footer 삽입 -->
+  <div th:replace="~{views/community/footer :: footer}"></div>
+
+  <!-- 게시판 이름 붙여주는 스크립트 -->
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    var board = /*[[${board}]]*/1;
+    var result;
+    switch (board) {
+      case "tips_and_info":
+        result = "꿀팁, 정보";
+        break;
+      case "free_and_humor":
+        result = "자유, 유머";
+        break;
+      case "best":
+        result = "베스트";
+        break;
+      default:
+        result = "";
+    }
+    document.title = result + " 게시판";
+    /*]]>*/
+  </script>
+</body>
+
+</html>

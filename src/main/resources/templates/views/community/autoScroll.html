@@ -1,0 +1,66 @@
+<!-- 
+  특정 위치로 스크롤을 해 주는 플로팅 버튼입니다.
+  사용자의 편의를 위해 추가한 기능입니다.
+  다양한 커뮤니티 사이트를 분석한 결과, 대부분의 사이트가 유저의 편의를 위해 이 기능을 제공하고 있었습니다.
+-->
+<!DOCTYPE html>
+<html lang="kor" xmlns:th="http://www.thymeleaf.org" th:fragment="autoScroll">
+
+<head>
+  <style>
+    tr:hover {
+      cursor: pointer;
+    }
+
+    #scrollButtons {
+      position: fixed;
+      top: 70%;
+      right: 8%;
+      z-index: 99;
+      background-color: gainsboro;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .scrollbutton {
+      width: max-content;
+      height: max-content;
+      display: block;
+      margin-bottom: 10%;
+      background-color: #5c8984;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 스크롤 이동 버튼-->
+  <div class="scroll-buttons" id="scrollButtons">
+    <button title="맨 위로" onclick="scrollToSection('top')" class="btn btn-primary scrollbutton"><i
+        class="bi bi-arrow-up-circle"></i></button>
+    <!-- 맨 위-->
+    <button title="본문으로" onclick="scrollToSection('content')" class="btn btn-primary scrollbutton"><i
+        class="bi bi-file-text"></i></button>
+    <!-- 본문 부분-->
+    <button title="댓글창으로" onclick="scrollToSection('comments')" class="btn btn-primary scrollbutton"><i
+        class="bi bi-chat-dots"></i></button>
+    <!--댓글 부분-->
+    <button title="댓글입력으로" onclick="scrollToSection('commentFormAnchor')" class="btn btn-primary scrollbutton"
+      th:if="${loginUser != null}"><i class="bi bi-list-task"></i></button>
+    <!-- 페이지 부분-->
+    <button title="맨 아래로" onclick="scrollToSection('bottom')" class="btn btn-primary scrollbutton"><i
+        class="bi bi-arrow-down-circle"></i></button>
+    <!-- 정해진 페이지 위치로 스크롤하게 합니다. 매칭되는 앵커가 존재해야 합니다.-->
+  </div>
+  <script>
+    //페이지 스크롤링 버튼
+    function scrollToSection(id) {
+      var section = document.getElementById(id);
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+  <!-- 스크롤 이동 버튼 끝-->
+</body>
+
+</html>

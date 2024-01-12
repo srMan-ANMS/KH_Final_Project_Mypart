@@ -1,0 +1,116 @@
+<!-- 
+  댓글 리스트 템플릿입니다.  
+-->
+
+<table class="table">
+  <thead>
+    <tr>
+      <th colspan="2" style="background-color: #5c8984; cursor: default; border: none;">
+        <span style="color: white; font-size: 24px; font-weight: bold;">댓글 목록</span>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <th:block th:each="reply : ${replies}"> <!-- 서버에서 받은 replies를 반복함. 임시변수는 reply-->
+      <tr style="background-color: darkgrey; cursor: default;">
+        <td scope="col" style="width: 90%; text-align: left; padding: 3px;">
+          <span style="font-size: 16px; font-weight: bold;">[[${reply.memberNickname}]]</span>
+          <span style="margin-left: 5px; font-size: 10px; color: gray;"
+            th:text="'작성일 : ' + ${#dates.format(reply.replyEnrollDate, 'yyyy-MM-dd HH:mm:ss')}"></span>
+          <span th:if="${reply.replyModifyDate != null}" style="margin-left: 5px; font-size: 10px; color: gray;"
+            th:text="'수정일 : ' + ${#dates.format(reply.replyModifyDate, 'yyyy-MM-dd HH:mm:ss')}"></span>
+        </td>
+        <td scope="col" style="width: 10%; padding: 3px;">
+          <button type="button" class="btn btn-outline-primary"
+            th:if="${loginUser != null && !loginUser?.memberNo.equals(reply?.memberNo)}"
+            style="cursor: pointer; background-color: #5c8984;border: none; color: white; margin: 1px; padding: 3px"
+            th:onclick="reportReply([[${reply.replyNo}]])">신고</button>
+          <button type="button" class="btn btn-outline-primary"
+            th:if="${loginUser != null && loginUser?.memberNo.equals(reply?.memberNo)}"
+            style="cursor: pointer; background-color: #5c8984;border: none; color: white; margin: 1px; padding: 3px"
+            th:onclick="toggleEditForm(this, [[${reply.replyNo}]])">수정</button>
+          <button type="button" class="btn btn-outline-primary"
+            th:if="${loginUser != null && loginUser?.memberNo.equals(reply?.memberNo)}"
+            style="cursor: pointer; background-color: #5c8984;border: none; color: white; margin: 1px; padding: 3px"
+            th:onclick="deleteReply([[${reply.replyNo}]])">삭제</button>
+        </td>
+      </tr>
+      <tr style="cursor: default;">
+        <!-- 댓글 내용 -->
+        <td scope="col"
+          style="text-align: left; padding: 3px; cursor: default; width: 90%;">
+          <span style="word-wrap: break-word; overflow-wrap: break-word;" th:text="${reply.replyContent}"></span>
+        </td>
+        <!-- 추천/반대 -->
+        <td scope="col" style=" padding: 3px; width: 10%;">
+          <div style="display: flex; align-items: center;" th:id="'reply-like-dislike-' + ${reply.replyNo}">
+            <label for="thumbs-up-button">
+              <span th:id="'reply-like-count-' + ${reply.replyNo}"
+                style="margin-right: 5px; cursor: pointer;">[[${reply.replyLikes}]]</span>
+            </label>
+            <button type="button" th:id="'thumbs-up-button-' + ${reply.replyNo}" class="btn btn-outline-primary"
+              style="cursor: pointer; background-color: #5c8984; border: none; color: white; margin-right: 5px; padding: 3px;"
+              th:onclick="likeReply([[${reply.replyNo}]])"
+              th:disabled="${loginUser == null || loginUser?.memberNo.equals(reply?.memberNo)}"><i
+                class="bi bi-hand-thumbs-up-fill"></i></button>
+            &nbsp;&nbsp;&nbsp;
+            <label for="thumbs-down-button">
+              <span th:id="'reply-dislike-count-' + ${reply.replyNo}"
+                style="margin-right: 5px; cursor: pointer;">[[${reply.replyDislikes}]]</span>
+            </label>
+            <button type="button" th:id="'thumbs-down-button-' + ${reply.replyNo}" class="btn btn-outline-primary"
+              style="cursor: pointer; background-color: gray; border: none; color: white; margin-right: 5px; padding: 3px;"
+              th:onclick="dislikeReply([[${reply.replyNo}]])"
+              th:disabled="${loginUser == null || loginUser?.memberNo.equals(reply?.memberNo)}"><i
+                class="bi bi-hand-thumbs-down-fill"></i></button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 댓글 수정창입니다. -->
+      <tr style="cursor: default;">
+        <td class="edit-form-td" scope="col" colspan="2" style="display: none;"
+          th:id="'comment-modify-td-' + ${reply.replyNo}">
+          <form class="edit-form" style="width: 100%">
+            <div class="mb-3">
+              <label th:for="'comment-modify-' + ${reply.replyNo}" class="form-label">수정하기</label>
+              <textarea class="form-control comment-modify" th:id="'comment-modify-' + ${reply.replyNo}"
+                maxlength="1000" placeholder="댓글은 1000자 제한입니다." required th:oninput="countChars2([[${reply.replyNo}]])"
+                rows="4" style="width: 100%;">[[${reply.replyContent}]]</textarea>
+              <div id="charNum2">0/1000</div>
+            </div>
+            <div>
+              <button type="button" class="btn btn-primary float-end" style="cursor: pointer;
+                    background-color: #5c8984;border: none; color: white; margin: 1px;"
+                th:onclick="editReply(this, [[${reply.replyNo}]])">수정하기</button>
+              <button type="button" class="btn btn-primary float-end" style="cursor: pointer;
+                    background-color: gray; border: none; color: white; margin: 1px;"
+                th:onclick="toggleEditForm(this, [[${reply.replyNo}]])">취소</button>
+            </div>
+          </form>
+        </td>
+      </tr>
+    </th:block>
+  </tbody>
+</table>
+<nav aria-label="Standard pagination example">
+  <ul class="pagination justify-content-center mt-5" th:if="${pi.startPage != 0 and pi.endPage != 0}">
+    <li class="page-item" th:if="${pi.currentPage > 1}">
+      <a class="page-link comment-page-link" href="javascript:void(0);" th:data-page="${pi.currentPage - 1}"
+        aria-label="Previous">
+        <span aria-hidden="true">«</span>
+      </a>
+    </li>
+    <th:block th:each="p : ${#numbers.sequence(pi.startPage, pi.endPage)}" th:unless="${pi.startPage == pi.endPage}">
+      <li class="page-item" th:classappend="${pi.currentPage == p} ? 'active' : null">
+        <a class="page-link comment-page-link" th:data-page="${p}" th:text="${p}"></a>
+      </li>
+    </th:block>
+    <li class="page-item" th:if="${pi.currentPage < pi.endPage}">
+      <a class="page-link comment-page-link" href="javascript:void(0);" th:data-page="${pi.currentPage + 1}"
+        aria-label="Next">
+        <span aria-hidden="true">»</span>
+      </a>
+    </li>
+  </ul>
+</nav>

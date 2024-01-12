@@ -1,0 +1,206 @@
+<!-- 
+  해당 게시판의 게시글 목록만 보여주는 템플릿입니다.
+-->
+
+<!DOCTYPE html>
+<html lang="kor" xmlns:th="http://www.thymeleaf.org" th:fragment="list">
+
+<head>
+  <style>
+    tbody:hover {
+      cursor: pointer;
+    }
+
+    .page-item {
+      border: none;
+    }
+
+    .page-link {
+      color: white;
+      background-color: #5c8984;
+      border: none;
+    }
+
+    .ud-widget-title {
+      font-size: 60px;
+      font-weight: bolder;
+      color: #5c8984;
+      margin-bottom: 1rem;
+      text-align: left;
+      text-decoration: none;
+    }
+
+    a {
+      text-decoration: none;
+      color: #5c8984;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ====== 리스트 Start ====== -->
+  <section class="container ud-features">
+
+    <!--게시판 이동 버튼-->
+    <div class="row justify-content-center mb-1 pb-1"
+      th:if="${board == 'admin_announcement' or board == 'user_question'}" th:hidden="true">
+      <div class="mb-4 text-center">
+        <button class="btn btn-primary" type="button" style="cursor: pointer;
+        background-color: #5c8984;border: none; color: white; margin: 1px;"
+          onclick="location.href='board.comm?board=best'">베스트</button>
+        <button class="btn btn-primary" type="button" style="cursor: pointer;
+        background-color: #5c8984;border: none; color: white; margin: 1px;"
+          onclick="location.href='board.comm?board=tips_and_info'">꿀팁, 정보</button>
+        <button class="btn btn-primary" type="button" style="cursor: pointer;
+        background-color: #5c8984;border: none; color: white; margin: 1px;"
+          onclick="location.href='board.comm?board=free_and_humor'">자유, 유머</button>
+      </div>
+    </div>
+
+    <!-- <h1 class="ud-widget-title mb-2">[[${board}]]</h1> -->
+    <div th:switch="${board}">
+      <h1 class="ud-widget-title mb-2" th:case="'best'"><a href="board.comm?board=best">베스트</a></h1>
+      <h1 class="ud-widget-title mb-2" th:case="'tips_and_info'"><a href="board.comm?board=tips_and_info">꿀팁, 정보</a>
+      </h1>
+      <h1 class="ud-widget-title mb-2" th:case="'free_and_humor'"><a href="board.comm?board=free_and_humor">자유, 유머</a>
+      </h1>
+      <h1 class="ud-widget-title mb-2" th:case="'admin_announcement'"><a
+          href="board.comm?board=admin_announcement">공지사항</a></h1>
+      <h1 class="ud-widget-title mb-2" th:case="'user_question'"><a href="board.comm?board=user_question">건의사항</a></h1>
+    </div>
+
+    <div style="height: 50px; margin-top: 10px; margin-bottom: 10px;">
+      <h5>
+        <a href="board.comm?board=tips_and_info" style="margin: 10px;">꿀팁, 정보</a>
+        <a href="board.comm?board=free_and_humor" style="margin: 10px;">자유, 유머</a>
+        <a href="board.comm?board=best" style="margin: 10px;">베스트</a>
+      </h5>
+    </div>
+    <!-- 글쓰기 버튼 -->
+    <div th:if="${session.loginUser != null && board != 'best' && board != 'admin_announcement'}"
+      class="container mb-4">
+      <div class="container mb-4">
+        <div class="row-cols-sm-12">
+          <button class="btn btn-primary" type="button"
+            style="cursor: pointer; background-color: #5c8984;border: none; color: white; margin: 1px;"
+            th:data-board="${board}"
+            th:onclick="|location.href='write.comm?board=' + $(this).data('board')|">글쓰기</button>
+        </div>
+      </div>
+    </div>
+
+    <table class="table table-hover">
+      <thead>
+        <tr style="cursor: default; background-color: lightgray;"> <!-- 커서 호버되는거 무시하려고-->
+          <th scope="col">제목</th>
+          <th scope="col" style="width: 180px;">글쓴이</th>
+          <th scope="col" style="width: 150px;">작성일</th>
+          <th scope="col" style="width: 100px; text-align: center;">조회</th>
+          <th scope="col" style="width: 50px; text-align: center;">추천</th>
+        </tr>
+      </thead>
+      <tbody>
+        <th:block th:if="${not #lists.isEmpty(list)}">
+          <tr th:each="b : ${list}">
+            <td hidden th:text="${b.boardNo}"></td>
+            <td>
+              <span
+                th:text="${#strings.length(b.boardTitle) &gt; 50 ? #strings.substring(b.boardTitle, 0, 50) + '...' : b.boardTitle}"></span>
+            </td>
+            <td th:text="${b.memberNickname}"></td>
+            <td th:text="${#dates.format(b.boardEnrollDate, 'yy-MM-dd HH:mm')}"></td>
+            <td th:text="${b.boardViews}" style="text-align: center;"></td>
+            <td th:text="${b.boardLikes}" style="text-align: center;"></td>
+          </tr>
+        </th:block>
+      </tbody>
+    </table>
+
+    <nav aria-label="Standard pagination example">
+      <!-- 변수 loc로 현재 페이지의 URI를 가져옵니다. ctx는 context-->
+      <ul class="pagination justify-content-center mt-5" th:if="${pi.startPage != 0 and pi.endPage != 0}">
+        <li class="page-item" th:if="${pi.currentPage > 1}">
+          <a class="page-link" th:href="@{${ loc }(board=${board},page=${ pi.currentPage - 1 })}" aria-label="Previous">
+            <!-- @{}로 thymeleaf의 변수를 쓴다고 선언합니다. 소괄호()는 파라미터로 page에 currentPage-1을 넣는다는 말입니다.이전에 썼던 goNext같은 건 없습니다.-->
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+
+        <th:block th:each="p : ${#numbers.sequence(pi.startPage, pi.endPage)}">
+          <!-- 시작과 끝을 정한것으로, 시퀀스를 사용한다는 말입니다.
+                numbers는 thymeleaf의 유틸리티입니다.-->
+          <li class="page-item" th:classappend="${pi.currentPage == p} ? 'active' : null"><a class="page-link"
+              th:href="@{${ loc }(board=${board},page=${p})}" th:text="${p}"></a>
+          </li>
+        </th:block>
+
+        <li class="page-item" th:if="${pi.currentPage < pi.endPage}">
+          <a class="page-link" th:href="@{${ loc }(board=${board},page=${ pi.currentPage + 1 })}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- 게시글 검색창 -->
+    <div class="container w-50 pt-3">
+      <form id="search-form" method="get">
+        <div class="input-group mb-3 mt-3" style="border: #5c8984 1px solid; border-radius: 5px;">
+          <select name="search-option" class="btn" style="margin-right: 10px; color: #5c8984; font-weight: bolder;">
+            <option value="all">전체</option>
+            <option value="title">제목</option>
+            <option value="content">내용</option>
+            <option value="titleAndContent">제목+내용</option>
+            <option value="author">작성자</option>
+          </select>
+          <input type="text" class="form-control" id="search-keyword" placeholder="2글자 이상으로 검색어를 입력해 주세요">
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="submit">검색</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 스크립트 -->
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+
+    //게시글 클릭하면 게시글로 이동하게 해주는 스크립트
+    window.onload = function () {
+      const trs = document.querySelectorAll("tbody tr");
+      trs.forEach((tr) => {
+        tr.addEventListener("click", () => {
+          const boardNo = tr.querySelectorAll("td")[0].innerText;
+          console.log("🚀 ~ file: list.html:89 ~ tr.addEventListener ~ boardNo:", boardNo)
+          location.href = "post.comm?no=" + boardNo;
+        });
+      });
+    };
+
+    //검색을 위한 스크립트
+    $(function () {
+      $('#search-form').submit(function (event) {
+        event.preventDefault();
+        var searchOption = $('select[name="search-option"]').val();
+        var searchKeyword = $('#search-keyword').val();
+        var boardValue = /*[[${ board }]]*/1;
+        if (boardValue.startsWith('"') && boardValue.endsWith('"')) {
+          boardValue = boardValue.substring(1, boardValue.length - 1);
+        }
+        if (searchKeyword.length < 2) { // 검색어가 2글자 미만인 경우
+          showFailure('검색 실패', '검색어는 2글자 이상 입력해주세요.');
+          return false; // 검색 취소
+        }
+        //searchkeyword가 null이 된다면 그걸 빈칸으로 바꿔줘야 할 수도.
+        var url = 'board.comm?board=' + boardValue + '&searchOption=' + searchOption + '&searchKeyword=' + searchKeyword;
+        window.location.href = url;
+      });
+    });
+    /*]]>*/
+  </script>
+
+  <!-- ====== Features End ====== -->
+</body>
+
+</html>

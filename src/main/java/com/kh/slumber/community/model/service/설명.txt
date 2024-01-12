@@ -1,0 +1,6 @@
+service의 비대함과 떨어지는 가독성을 해결하기 위해, service를 여러 파트로 분리했습니다.
+service는 인터페이스, serviceImpl은 구현 클래스입니다.
+
+serviceImpl에서 2개의 Helper클래스를 호출하는 구조입니다.
+
+가독성이 좋아지고 코드 중복을 많이 줄일 수 있었습니다.

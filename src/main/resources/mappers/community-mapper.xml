@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kh.slumber.community.model.dao.CommunityDAO">
+
+  <!-- getPosts : 특정 게시판에서 게시글만 가져오기-->
+  <select id="getPosts" resultMap="commPostResultSet">
+    select *
+    from community_board
+    where board_isdeleted = 'N' and board_ishidden = 'N'
+    <if test="board.equals('best')">
+            and BOARD_LIKES >= 15 and BOARD_DISLIKES &lt; board_likes - 2
+    </if>
+    <if test="!board.equals('best')">
+            and board_type = #{board}
+    </if>
+    order by board_no desc
+  </select>
+
+
+  <!-- 게시글 개수 가져오기 -->
+  <select id="countAllPosts" resultType="_int">
+		select count(*)
+		from community_board
+        where BOARD_ISHIDDEN='N' and board_IsDeleted = 'N' and board_type=#{board}
+  </select>
+
+  <!-- 검색조건에 맞는 게시글 개수-->
+  <select id="countSearchedPosts" resultType="_int">
+        SELECT count(*)
+        FROM community_board cb 
+        JOIN member m on(cb.member_no = m.member_no)
+        WHERE (cb.BOARD_ISHIDDEN='N' AND cb.board_IsDeleted = 'N' AND cb.board_type= #{board})
+    <choose>
+      <when test="searchOption == 'all'">
+                AND (cb.board_title LIKE '%' || #{searchKeyword} || '%' OR cb.board_content LIKE '%' || #{searchKeyword} || '%' OR m.member_name LIKE '%' || #{searchKeyword} || '%')
+      </when>
+      <when test="searchOption == 'title'">
+                AND cb.board_title LIKE '%' || #{searchKeyword} || '%'
+      </when>
+      <when test="searchOption == 'content'">
+                AND cb.board_content LIKE '%' || #{searchKeyword} || '%'
+      </when>
+      <when test="searchOption == 'titleAndContent'">
+                AND (cb.board_title LIKE '%' || #{searchKeyword} || '%' OR cb.board_content LIKE '%' || #{searchKeyword} || '%')
+      </when>
+      <when test="searchOption == 'author'">
+                AND m.member_nickname LIKE '%' || #{searchKeyword} || '%'
+      </when>
+    </choose>
+  </select>
+
+  <!-- 게시글 목록 가져오기 
+    board : 게시판의 종류-->
+  <select id="getPostsAndWriters" resultMap="commPostAndWriterResultSet">
+    <if test="!board.equals('best')">
+            SELECT cb.*, m.*
+            FROM community_board cb 
+            JOIN member m on(cb.member_no = m.member_no)
+            WHERE cb.BOARD_ISHIDDEN='N' AND cb.board_IsDeleted = 'N' AND cb.board_type= #{board}
+            order by cb.board_no desc
+    </if>
+    <if test="board.equals('best')">
+            SELECT cb.*, m.*
+            FROM community_board cb 
+            JOIN member m on(cb.member_no = m.member_no)
+            WHERE cb.BOARD_ISHIDDEN='N' AND cb.board_IsDeleted = 'N' AND cb.board_likes >= 15 and cb.board_dislikes &lt; cb.board_likes - 2
+            order by cb.board_no desc
+    </if>
+  </select>
+
+  <!-- 게시글 번호로 작성자 찾기
+    boardNo : 게시글 번호-->
+  <select id="getWriterMemberNo" resultMap="commPostAndWriterResultSet">
+        SELECT cb.MEMBER_NO
+        FROM community_board cb 
+        JOIN member m on(cb.member_no = m.member_no)
+        WHERE cb.BOARD_ISHIDDEN='N' AND cb.board_IsDeleted = 'N' AND cb.board_no = ${boardNo}
+  </select>
+
+  <!-- 게시글 조회수 증가
+    boardNo-->
+  <update id="plusOneViewCount">
+        update community_board
+        set board_views = board_views + 1
+        where board_no = #{boardNo}
+  </update>
+
+  <!-- 게시글 상세보기 : 멤버 정보도 같이 가져옵니다. 
+    boardNo : 게시글 번호-->
+  <select id="getPostByBoardId" resultMap="commPostAndWriterResultSet">
+        SELECT cb.*, m.*
+        FROM community_board cb 
+        JOIN member m on(cb.member_no = m.member_no)
+        WHERE cb.BOARD_ISHIDDEN='N' AND cb.board_IsDeleted = 'N' AND cb.board_no = #{boardNo}
+  </select>
+
+  <!-- 게시판 검색
+        board
+        searchOption
+        searchKeyword-->
+  <select id="searchPostsAndWriters" resultMap="commPostAndWriterResultSet">
+        SELECT *
+        FROM community_board cb 
+        JOIN member m using(member_no)
+    <choose >
+      <when test="board.equals('best')">
+                WHERE cb.BOARD_ISHIDDEN='N' AND cb.board_IsDeleted = 'N' AND (cb.board_likes >= 15) and (cb.board_dislikes &lt; cb.board_likes - 2)
+      </when>
+      <when test="!board.equals('best')">
+                WHERE (cb.BOARD_ISHIDDEN='N' AND cb.board_IsDeleted = 'N' AND cb.board_type= #{board})
+      </when>
+      <otherwise>
+                WHERE 1=1
+      </otherwise>
+    </choose>
+    <choose>
+      <when test="searchOption == 'all'">
+                AND (cb.board_title LIKE '%' || #{searchKeyword} || '%' OR cb.board_content LIKE '%' || #{searchKeyword} || '%' OR m.member_nickname LIKE '%' || #{searchKeyword} || '%')
+      </when>
+      <when test="searchOption == 'title'">
+                AND cb.board_title LIKE '%' || #{searchKeyword} || '%'
+      </when>
+      <when test="searchOption == 'content'">
+                AND cb.board_content LIKE '%' || #{searchKeyword} || '%'
+      </when>
+      <when test="searchOption == 'titleAndContent'">
+                AND (cb.board_title LIKE '%' || #{searchKeyword} || '%' OR cb.board_content LIKE '%' || #{searchKeyword} || '%')
+      </when>
+      <when test="searchOption == 'author'">
+                AND m.member_nickname LIKE '%' || #{searchKeyword} || '%'
+      </when>
+      <otherwise>
+                AND 1=1
+      </otherwise>
+    </choose>
+        ORDER BY rownum DESC
+  </select>
+
+  <!-- 게시글 행위 체크-->
+  <select id="checkPostReaderAction" resultType="_int">
+    SELECT count(*)
+    FROM community_board_action
+    WHERE member_no = #{userNo} AND board_no = #{boardNo} AND
+    <choose>
+      <when test="actionType == 'like'">
+                is_liked = 1
+      </when>
+      <when test="actionType == 'dislike'">
+                is_disliked = 1
+      </when>
+      <when test="actionType == 'report'">
+                is_reported = 1
+      </when>
+    </choose>
+  </select>
+
+  <!-- 댓글 행위 체크-->
+  <select id="checkReplyReaderAction" resultType="_int">
+    SELECT count(*)
+    FROM community_reply_action
+    WHERE member_no = #{userNo} AND reply_no = #{replyNo} AND
+    <choose>
+      <when test="actionType == 'like'">
+                is_liked = 1
+      </when>
+      <when test="actionType == 'dislike'">
+                is_disliked = 1
+      </when>
+      <when test="actionType == 'report'">
+                is_reported = 1
+      </when>
+    </choose>
+  </select>
+
+  <!-- 게시글 행위 했다고 인스턴스 추가-->
+  <insert id="insertPostReaderAction">
+  INSERT INTO community_board_action VALUES
+    <choose>
+      <when test="actionType == 'like'">
+      (#{userNo}, #{boardNo}, 1, 0, 0)
+      </when>
+      <when test="actionType == 'dislike'">
+      (#{userNo}, #{boardNo}, 0, 1, 0)
+      </when>
+      <when test="actionType == 'report'">
+      (#{userNo}, #{boardNo}, 0, 0, 1)
+      </when>
+    </choose>
+  </insert>
+
+  <!-- 게시글 행위 한 적 없다고 인스턴스 삭제-->
+  <delete id="deletePostReaderAction">
+  DELETE FROM community_board_action
+  WHERE member_no = #{memberNo}
+    AND board_no = #{boardNo}
+    AND 
+    <choose>
+      <when test="actionType == 'like'">
+      is_liked = 1
+      </when>
+      <when test="actionType == 'dislike'">
+      is_disliked = 1
+      </when>
+      <when test="actionType == 'report'">
+      is_reported = 1
+      </when>
+    </choose>
+  </delete>
+
+  <!-- 댓글 행위 했다고 인스턴스 추가-->
+  <insert id="insertReplyReaderAction">
+    INSERT INTO community_reply_action VALUES
+    <choose>
+      <when test="actionType == 'like'">
+                (#{userNo}, #{replyNo}, 1, 0, 0)
+      </when>
+      <when test="actionType == 'dislike'">
+                (#{userNo}, #{replyNo}, 0, 1, 0)
+      </when>
+      <when test="actionType == 'report'">
+                (#{userNo}, #{replyNo}, 0, 0, 1)
+      </when>
+    </choose>
+  </insert>
+
+  <!-- 댓글 행위 한 적 없다고 인스턴스 삭제-->
+  <delete id="deleteReplyReaderAction">
+  DELETE FROM community_reply_action
+  WHERE member_no = #{memberNo}
+    AND reply_no = #{replyNo}
+    AND 
+    <choose>
+      <when test="actionType == 'like'">
+      is_liked = 1
+      </when>
+      <when test="actionType == 'dislike'">
+      is_disliked = 1
+      </when>
+      <when test="actionType == 'report'">
+      is_reported = 1
+      </when>
+    </choose>
+  </delete>
+
+  <!-- 게시글 반응 수 +1-->
+  <update id="plusOneToPostReaderAction">
+    UPDATE community_board
+    SET
+    <choose>
+      <when test="actionType == 'like'">
+                board_likes = board_likes + 1
+      </when>
+      <when test="actionType == 'dislike'">
+                board_dislikes = board_dislikes + 1
+      </when>
+      <when test="actionType == 'report'">
+                board_reports = board_reports + 1
+      </when>
+    </choose>
+    WHERE board_no = #{boardNo}
+  </update>
+
+  <!-- 게시글 반응 수 -1-->
+  <update id="minusOneToPostReaderAction">
+    UPDATE community_board
+    SET
+    <choose>
+      <when test="actionType == 'like'">
+                board_likes = board_likes - 1
+      </when>
+      <when test="actionType == 'dislike'">
+                board_dislikes = board_dislikes - 1
+      </when>
+      <when test="actionType == 'report'">
+                board_reports = board_reports - 1
+      </when>
+    </choose>
+    WHERE board_no = #{boardNo}
+  </update>
+
+  <!-- 댓글 반응 수 +1-->
+  <update id="plusOneToReplyReaderAction">
+    UPDATE community_reply
+    SET
+    <choose>
+      <when test="actionType == 'like'">
+                reply_likes = reply_likes + 1
+      </when>
+      <when test="actionType == 'dislike'">
+                reply_dislikes = reply_dislikes + 1
+      </when>
+      <when test="actionType == 'report'">
+                reply_reports = reply_reports + 1
+      </when>
+    </choose>
+    WHERE reply_no = #{replyNo}
+  </update>
+
+  <!-- 댓글 반응 수 -1-->
+  <update id="minusOneToReplyReaderAction">
+    UPDATE community_reply
+    SET
+    <choose>
+      <when test="actionType == 'like'">
+                reply_likes = reply_likes - 1
+      </when>
+      <when test="actionType == 'dislike'">
+                reply_dislikes = reply_dislikes - 1
+      </when>
+      <when test="actionType == 'report'">
+                reply_reports = reply_reports - 1
+      </when>
+    </choose>
+    WHERE reply_no = #{replyNo}
+  </update>
+
+  <!-- 댓글 개수 가져오기 :-->
+  <select id="countAllReplies" resultType="_int">
+    SELECT count(*)
+    FROM community_reply
+    WHERE board_no = #{boardNo} AND reply_isdeleted = 'N' and reply_ishidden = 'N'
+  </select>
+
+  <!-- 댓글 목록 가져오기-->
+  <select id="getRepliesAndWriters" resultMap="commReplyAndWriterResultSet">
+    SELECT cr.*, m.*
+    FROM community_reply cr
+    JOIN member m on(cr.member_no = m.member_no)
+    WHERE cr.board_no = #{boardNo} AND cr.reply_isdeleted = 'N' and cr.reply_ishidden = 'N'
+    ORDER BY cr.reply_enroll_date asc
+  </select>
+
+  <!-- 댓글 삽입하기-->
+  <insert id="addReply" parameterType="com.kh.slumber.community.model.vo.CommunityReply">
+        INSERT INTO community_reply VALUES
+        (SEQ_COMM_REPLY_NO.NEXTVAL, ${memberNo}, ${boardNo}, #{replyContent}, 0, 0, 0, SYSDATE, null, 'N', 'N', DEFAULT)
+  </insert>
+
+  <!-- 댓글 수정하기 -->
+  <update id="editReply" parameterType="com.kh.slumber.community.model.vo.CommunityReply">
+    UPDATE community_reply
+    SET REPLY_CONTENT = #{replyContent},
+        REPLY_MODIFY_DATE = SYSDATE
+    WHERE REPLY_NO = #{replyNo}
+  </update>
+
+  <!-- 댓글 삭제하기 -->
+  <update id="deleteReply" parameterType="com.kh.slumber.community.model.vo.CommunityReply">
+    UPDATE community_reply
+    SET REPLY_ISDELETED = 'Y',
+        REPLY_MODIFY_DATE = SYSDATE
+    WHERE REPLY_NO = #{replyNo} AND BOARD_NO = #{boardNo}
+  </update>
+
+  <!-- 게시글 등록 
+  board_type에 해당하는 category를 받습니다.-->
+  <insert id="createPost">
+  INSERT INTO community_board VALUES 
+  (
+    SEQ_COMM_BOARD_NO.NEXTVAL,
+    #{memberNo},
+    #{title},
+    #{content},
+    0, 0, 0, 0,
+    #{category},
+    SYSDATE, null,
+    'N', 'N'
+  )
+  </insert>
+
+  <!-- 게시글 삭제-->
+  <update id="deletePost">
+    UPDATE community_board
+    SET board_isdeleted = 'Y'
+    WHERE board_no = #{boardNo}
+  </update>
+
+<!-- 게시글 정보 가져오기-->
+<select id="getPost" resultMap="commPostResultSet">
+  SELECT *
+  FROM community_board
+  WHERE board_no = #{boardNo}
+</select>
+
+<!-- 게시글 수정하기 -->
+<update id="editPost">
+  UPDATE community_board
+  SET board_title = #{title},
+      board_content = #{content},
+      board_type = #{category},
+      board_modify_date = SYSDATE
+  WHERE board_no = #{boardNo}
+</update>
+
+
+  <!-- ============================================resultMap=================================================-->
+
+  <!-- ROWNUM은 컬럼으로 할 필요가 없다고 생각했는데, 오류가 생기면 추가.-->
+
+  <!-- 게시글 내용만 매핑-->
+  <resultMap type="CommunityPost" id="commPostResultSet">
+    <id column="BOARD_NO" property="boardNo"/>
+    <result column="MEMBER_NO" property="memberNo"/>
+    <result column="BOARD_TITLE" property="boardTitle"/>
+    <result column="BOARD_CONTENT" property="boardContent"/>
+    <result column="BOARD_LIKES" property="boardLikes"/>
+    <result column="BOARD_DISLIKES" property="boardDislikes"/>
+    <result column="BOARD_REPORTS" property="boardReports"/>
+    <result column="BOARD_VIEWS" property="boardViews"/>
+    <result column="BOARD_TYPE" property="boardType"/>
+    <result column="BOARD_ENROLL_DATE" property="boardEnrollDate"/>
+    <result column="BOARD_MODIFY_DATE" property="boardModifyDate"/>
+    <result column="BOARD_ISDELETED" property="boardIsDeleted"/>
+    <result column="BOARD_ISHIDDEN" property="boardIsHidden"/>
+  </resultMap>
+
+  <!-- 게시글 상세보기 위해 member 일부랑 커뮤니티랑 합친 클래스 만든거 매핑용-->
+  <resultMap type="CommunityPostAndWriter" id="commPostAndWriterResultSet">
+    <id column="BOARD_NO" property="boardNo"/>
+
+    <result column="MEMBER_NO" property="memberNo"/>
+    <result column="BOARD_TITLE" property="boardTitle"/>
+    <result column="BOARD_CONTENT" property="boardContent"/>
+    <result column="BOARD_LIKES" property="boardLikes"/>
+    <result column="BOARD_DISLIKES" property="boardDislikes"/>
+    <result column="BOARD_REPORTS" property="boardReports"/>
+    <result column="BOARD_VIEWS" property="boardViews"/>
+    <result column="BOARD_TYPE" property="boardType"/>
+    <result column="BOARD_ENROLL_DATE" property="boardEnrollDate"/>
+    <result column="BOARD_MODIFY_DATE" property="boardModifyDate"/>
+    <result column="BOARD_ISDELETED" property="boardIsDeleted"/>
+    <result column="BOARD_ISHIDDEN" property="boardIsHidden"/>
+    <result column="MEMBER_ID" property="memberId"/>
+    <result column="MEMBER_NICKNAME" property="memberNickname"/>
+    <result column="MEMBER_NAME" property="memberName"/>
+    <result column="MEMBER_PHONE" property="memberPhone"/>
+    <result column="MEMBER_ENROLL_DATE" property="memberEnrollDate"/>
+    <result column="MEMBER_IS_BLACKLIST" property="isMemberBlacklisted"/>
+  </resultMap>
+
+  <!-- 댓글 매핑용 -->
+  <resultMap type="CommunityReply" id="commReplyResultSet">
+    <id column="REPLY_NO" property="replyNo"/>
+    <result column="MEMBER_NO" property="memberNo"/>
+    <result column="BOARD_NO" property="boardNo"/>
+    <result column="REPLY_CONTENT" property="replyContent"/>
+    <result column="REPLY_LIKES" property="replyLikes"/>
+    <result column="REPLY_DISLIKES" property="replyDislikes"/>
+    <result column="REPLY_REPORTS" property="replyReports"/>
+    <result column="REPLY_ENROLL_DATE" property="replyEnrollDate"/>
+    <result column="REPLY_MODIFY_DATE" property="replyModifyDate"/>
+    <result column="REPLY_ISDELETED" property="replyIsDeleted"/>
+    <result column="REPLY_ISHIDDEN" property="replyIsHidden"/>
+  </resultMap>
+
+  <!-- 댓글 상세보기 위해 member 일부랑 reply합친 객체-->
+  <resultMap type="CommunityReplyAndWriter" id="commReplyAndWriterResultSet">
+    <id column="REPLY_NO" property="replyNo"/>
+    <result column="MEMBER_NO" property="memberNo"/>
+    <result column="BOARD_NO" property="boardNo"/>
+    <result column="REPLY_CONTENT" property="replyContent"/>
+    <result column="REPLY_LIKES" property="replyLikes"/>
+    <result column="REPLY_DISLIKES" property="replyDislikes"/>
+    <result column="REPLY_REPORTS" property="replyReports"/>
+    <result column="REPLY_ENROLL_DATE" property="replyEnrollDate"/>
+    <result column="REPLY_MODIFY_DATE" property="replyModifyDate"/>
+    <result column="REPLY_ISDELETED" property="replyIsDeleted"/>
+    <result column="REPLY_ISHIDDEN" property="replyIsHidden"/>
+    <result column="MEMBER_ID" property="memberId"/>
+    <result column="MEMBER_NICKNAME" property="memberNickname"/>
+    <result column="MEMBER_NAME" property="memberName"/>
+    <result column="MEMBER_PHONE" property="memberPhone"/>
+    <result column="MEMBER_ENROLL_DATE" property="memberEnrollDate"/>
+    <result column="MEMBER_IS_BLACKLIST" property="isMemberBlacklisted"/>
+  </resultMap>
+
+  <!-- 게시판 유저 행동 확인 매핑-->
+  <resultMap type="CommunityPostAction" id="commPostActionResultSet">
+    <result column="MEMBER_NO" property="memberNo"/>
+    <result column="BOARD_NO" property="boardNo"/>
+    <result column="IS_LIKED" property="isLiked"/>
+    <result column="IS_DISLIKED" property="isDisliked"/>
+    <result column="IS_REPORTED" property="isReported"/>
+  </resultMap>
+
+  <!-- 댓글 유저 행동 확인 매핑-->
+  <resultMap type="CommunityReplyAction" id="commReplyActionResultSet">
+    <result column="MEMBER_NO" property="memberNo"/>
+    <result column="REPLY_NO" property="replyNo"/>
+    <result column="IS_LIKED" property="isLiked"/>
+    <result column="IS_DISLIKED" property="isDisliked"/>
+    <result column="IS_REPORTED" property="isReported"/>
+  </resultMap>
+
+  <!-- Member객체 커뮤니티 위해서 매핑했습니다.-->
+  <resultMap type="CommunityMember" id="commMemberResultSet">
+    <id column="MEMBER_NO" property="memberNo"/>
+    <result column="MEMBER_ID" property="memberId"/>
+    <result column="MEMBER_PASSWORD" property="memberPassword"/>
+    <result column="MEMBER_NICKNAME" property="memberNickname"/>
+    <result column="MEMBER_NAME" property="memberName"/>
+    <result column="MEMBER_PHONE" property="memberPhone"/>
+    <result column="MEMBER_ENROLL_DATE" property="memberEnrollDate"/>
+    <result column="MEMBER_STATUS" property="memberStatus"/>
+    <result column="MEMBER_IS_BLACKLIST" property="isMemberBlacklist"/>
+    <result column="MEMBER_ADDR" property="memberAddr"/>
+    <result column="MEMBER_DETAIL_ADDR" property="memberDetailAddr"/>
+  </resultMap>
+</mapper>
