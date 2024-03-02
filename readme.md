@@ -15,6 +15,14 @@ https://spiny-truffle-e60.notion.site/KH-2305-2307-40fbe5eeea8d4cb6a5dbc1f13d9b1
 
 Oracle 19c, Java, Spring Boot, Thymeleaf, HTML/CSS/Javascript, jQuery, Bootstrap5, AWS S3, reCAPTCHA, summernote, IndexedDB
 
+#### 방향 : 
+
+- 아쉬운 점 보완하고, 새로운 가치 실현하기 : 다양한 시도, 넓은 시야 등
+
+#### 역할 : 
+- DB설계/검수
+- 커뮤니티 파트 총괄
+
 #### 주요 구현내용
 
 - Thymeleaf 서버 사이드 렌더링
